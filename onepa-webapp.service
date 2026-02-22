@@ -1,0 +1,13 @@
+[Unit]
+Description=OnePA Badminton Tracker Web App
+After=network.target
+
+[Service]
+User=onepa
+WorkingDirectory=/home/onepa/onepa_webapp
+ExecStart=/home/onepa/onepa_webapp/venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=120
+
+[Install]
+WantedBy=multi-user.target 

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OnePA Badminton Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #fff;
+    color: #111;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 1px solid #e8e8e8;
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 100;
+  }
+  header h1 { font-size: 17px; font-weight: 600; }
+  header p  { font-size: 12px; color: #999; margin-top: 2px; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+  .live-pill {
+    display: flex; align-items: center; gap: 7px;
+    border: 1px solid #e8e8e8; border-radius: 999px;
+    padding: 5px 13px; font-size: 12px; color: #888;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #2563eb; animation: blink 2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+  /* ── Layout ── */
+  .layout { display: flex; min-height: calc(100vh - 65px); }
+
+  /* ── Sidebar ── */
+  aside {
+    width: 300px;
+    flex-shrink: 0;
+    border-right: 1px solid #e8e8e8;
+    padding: 28px 24px;
+    overflow-y: auto;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 14px;
+  }
+  .sidebar-section { margin-bottom: 32px; }
+
+  /* Form elements */
+  label { display: block; font-size: 13px; color: #444; margin-bottom: 5px; }
+  input[type="text"], input[type="email"], input[type="password"], input[type="number"], select {
+    width: 100%;
+    border: 1px solid #e0e0e0;
+    border-radius: 7px;
+    padding: 8px 11px;
+    font-size: 13px;
+    color: #111;
+    background: #fff;
+    outline: none;
+    transition: border-color .15s;
+    margin-bottom: 10px;
+  }
+  input:focus, select:focus { border-color: #2563eb; }
+
+  .facility-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .facility-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid #e8e8e8;
+    border-radius: 7px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .12s;
+    user-select: none;
+  }
+  .facility-item:hover { border-color: #2563eb; background: #f0f6ff; }
+  .facility-item.active { border-color: #2563eb; background: #eff6ff; color: #2563eb; font-weight: 500; }
+  .facility-check {
+    width: 16px; height: 16px;
+    border: 1.5px solid #d0d0d0;
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: grid; place-items: center;
+    transition: all .12s;
+  }
+  .facility-item.active .facility-check {
+    background: #2563eb; border-color: #2563eb;
+  }
+  .facility-item.active .facility-check::after {
+    content: '✓'; color: #fff; font-size: 10px; font-weight: 700;
+  }
+
+  .hours-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+    margin-bottom: 12px;
+  }
+  .hour-btn {
+    border: 1px solid #e0e0e0; border-radius: 6px;
+    padding: 6px 4px; font-size: 12px; text-align: center;
+    cursor: pointer; transition: all .12s; user-select: none;
+    background: #fff; color: #666;
+  }
+  .hour-btn:hover { border-color: #2563eb; color: #2563eb; }
+  .hour-btn.active { background: #eff6ff; border-color: #2563eb; color: #2563eb; font-weight: 600; }
+
+  .recipients-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .recipient-row { display: flex; align-items: center; gap: 6px; }
+  .recipient-row input { margin: 0; flex: 1; }
+  .rm-btn {
+    background: none; border: 1px solid #e0e0e0; border-radius: 6px;
+    width: 30px; height: 34px; cursor: pointer; color: #999; font-size: 16px;
+    flex-shrink: 0; transition: all .12s;
+  }
+  .rm-btn:hover { border-color: #ef4444; color: #ef4444; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border-radius: 7px; font-size: 13px; font-weight: 600;
+    padding: 8px 16px; cursor: pointer; transition: all .15s; border: none;
+    width: 100%; margin-bottom: 8px;
+  }
+  .btn-primary { background: #2563eb; color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-outline { background: #fff; color: #2563eb; border: 1.5px solid #2563eb; }
+  .btn-outline:hover { background: #eff6ff; }
+  .btn-ghost { background: #f5f5f5; color: #444; }
+  .btn-ghost:hover { background: #eee; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; width: auto; margin: 0; }
+
+  /* ── Main content ── */
+  main { flex: 1; padding: 28px 36px; overflow-y: auto; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .stat { border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px 18px; }
+  .stat-num { font-size: 28px; font-weight: 700; color: #2563eb; line-height: 1; }
+  .stat-label { font-size: 12px; color: #999; margin-top: 4px; }
+
+  /* Controls */
+  .controls { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .search { flex: 1; min-width: 180px; border: 1px solid #e0e0e0; border-radius: 7px; padding: 8px 12px; font-size: 13px; outline: none; transition: border-color .15s; }
+  .search:focus { border-color: #2563eb; }
+  .filter { border: 1px solid #e0e0e0; border-radius: 7px; padding: 8px 12px; font-size: 13px; outline: none; background: #fff; cursor: pointer; }
+  .filter:focus { border-color: #2563eb; }
+
+  /* Table */
+  .table-wrap { border: 1px solid #e8e8e8; border-radius: 10px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead tr { background: #fafafa; border-bottom: 1px solid #e8e8e8; }
+  th { padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: #999; }
+  tbody tr { border-bottom: 1px solid #f0f0f0; transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f7f9ff; }
+  td { padding: 13px 16px; vertical-align: middle; }
+
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .badge-peak    { background: #fff3ed; color: #c2410c; }
+  .badge-offpeak { background: #f0fdf4; color: #15803d; }
+
+  a.book {
+    display: inline-block; background: #2563eb; color: #fff;
+    padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    text-decoration: none; transition: background .15s;
+  }
+  a.book:hover { background: #1d4ed8; }
+
+  /* Empty */
+  .empty { text-align: center; padding: 60px 20px; color: #bbb; }
+  .empty span { font-size: 40px; display: block; margin-bottom: 12px; }
+  .empty h3 { font-size: 15px; color: #555; margin-bottom: 6px; }
+  .empty p { font-size: 13px; }
+
+  /* Meta */
+  .meta { font-size: 12px; color: #ccc; text-align: right; margin-top: 10px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #111; color: #fff; padding: 10px 18px;
+    border-radius: 8px; font-size: 13px; font-weight: 500;
+    opacity: 0; transform: translateY(8px);
+    transition: all .2s; pointer-events: none; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.error { background: #ef4444; }
+  .toast.success { background: #16a34a; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    aside { width: 100%; border-right: none; border-bottom: 1px solid #e8e8e8; }
+    .stats { grid-template-columns: repeat(2,1fr); }
+    header { padding: 16px 20px; }
+    main { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <span style="font-size:24px">🏸</span>
+  <div>
+    <h1>OnePA Court Tracker</h1>
+    <p>Badminton slot monitor with live alerts</p>
+  </div>
+  <div class="header-right">
+    <div class="live-pill">
+      <div class="dot"></div>
+      <span id="liveText">LIVE</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- Sidebar: Settings -->
+  <aside>
+
+    <!-- Facilities -->
+    <div class="sidebar-section">
+      <div class="section-title">Community Clubs</div>
+      <div class="facility-list" id="facilityList"></div>
+    </div>
+
+    <!-- Email alerts -->
+    <div class="sidebar-section">
+      <div class="section-title">Email Alerts</div>
+      <label>Gmail sender address</label>
+      <input type="email" id="emailSender" placeholder="you@gmail.com">
+      <label>Gmail App Password</label>
+      <input type="password" id="emailPassword" placeholder="xxxx xxxx xxxx xxxx">
+      <label>Alert recipients</label>
+      <div class="recipients-list" id="recipientsList"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addRecipient()" style="width:100%;margin-bottom:10px">+ Add recipient</button>
+      <button class="btn btn-outline btn-sm" onclick="testEmail()" style="width:100%;margin-bottom:0">Send test email</button>
+    </div>
+
+    <!-- Check interval -->
+    <div class="sidebar-section">
+      <div class="section-title">Check Interval</div>
+      <label>Every N minutes</label>
+      <input type="number" id="checkInterval" min="1" max="60" value="5">
+      <label>Days ahead to scan</label>
+      <input type="number" id="daysAhead" min="1" max="15" value="7">
+    </div>
+
+    <!-- Preferred hours -->
+    <div class="sidebar-section">
+      <div class="section-title">Preferred Hours (alert only for these)</div>
+      <div class="hours-grid" id="hoursGrid"></div>
+      <button class="btn btn-ghost btn-sm" onclick="clearHours()" style="width:100%">Clear (alert all hours)</button>
+    </div>
+
+    <!-- Save -->
+    <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+    <button class="btn btn-outline" onclick="checkNow()">↻ Check Now</button>
+
+  </aside>
+
+  <!-- Main: Slots table -->
+  <main>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="sTotal">0</div><div class="stat-label">Available Slots</div></div>
+      <div class="stat"><div class="stat-num" id="sCCs">0</div><div class="stat-label">CCs Monitored</div></div>
+      <div class="stat"><div class="stat-num" id="sDays">0</div><div class="stat-label">Days Scanned</div></div>
+      <div class="stat"><div class="stat-num" id="sPeak">0</div><div class="stat-label">Peak Slots</div></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <input class="search" id="search" placeholder="Search by CC or date…" oninput="renderTable()">
+      <select class="filter" id="filterRate" onchange="renderTable()">
+        <option value="">All Rates</option>
+        <option value="peak">Peak only</option>
+        <option value="offpeak">Off-peak only</option>
+      </select>
+      <select class="filter" id="filterDay" onchange="renderTable()">
+        <option value="">All Days</option>
+      </select>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Community Club</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Court</th>
+            <th>Rate</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="meta" id="meta"></div>
+
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  let allSlots = [];
+  let allFacilities = [];
+  let selectedFacilities = new Set();
+  let selectedHours = new Set();
+
+  // ── Toast ──
+  function toast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show ' + type;
+    setTimeout(() => el.className = 'toast', 3000);
+  }
+
+  // ── Load config into sidebar ──
+  async function loadConfig() {
+    const [cfgRes, facRes] = await Promise.all([
+      fetch('/api/config'),
+      fetch('/api/facilities'),
+    ]);
+    const cfg = await cfgRes.json();
+    const facilities = await facRes.json();
+    allFacilities = facilities;
+
+    selectedFacilities = new Set(cfg.facility_ids || []);
+    selectedHours = new Set(cfg.preferred_hours || []);
+
+    document.getElementById('emailSender').value   = cfg.email_sender || '';
+    document.getElementById('emailPassword').value = cfg.email_password || '';
+    document.getElementById('checkInterval').value  = cfg.check_interval_min || 5;
+    document.getElementById('daysAhead').value      = cfg.days_ahead || 7;
+
+    // Recipients
+    const recips = cfg.email_recipients || [];
+    const list = document.getElementById('recipientsList');
+    list.innerHTML = '';
+    recips.forEach(r => addRecipientRow(r));
+
+    renderFacilities();
+    renderHours();
+  }
+
+  // ── Facilities ──
+  function renderFacilities() {
+    const list = document.getElementById('facilityList');
+    list.innerHTML = allFacilities.map(f => `
+      <div class="facility-item ${selectedFacilities.has(f.id) ? 'active' : ''}"
+           onclick="toggleFacility('${f.id}')">
+        <div class="facility-check"></div>
+        <span>${f.name}</span>
+      </div>`).join('');
+  }
+
+  function toggleFacility(id) {
+    selectedFacilities.has(id) ? selectedFacilities.delete(id) : selectedFacilities.add(id);
+    renderFacilities();
+  }
+
+  // ── Hours ──
+  function renderHours() {
+    const grid = document.getElementById('hoursGrid');
+    grid.innerHTML = Array.from({length: 24}, (_, h) => {
+      const label = h === 0 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h-12}pm`;
+      return `<div class="hour-btn ${selectedHours.has(h) ? 'active' : ''}" onclick="toggleHour(${h})">${label}</div>`;
+    }).join('');
+  }
+
+  function toggleHour(h) {
+    selectedHours.has(h) ? selectedHours.delete(h) : selectedHours.add(h);
+    renderHours();
+  }
+
+  function clearHours() {
+    selectedHours.clear();
+    renderHours();
+  }
+
+  // ── Recipients ──
+  function addRecipientRow(value = '') {
+    const list = document.getElementById('recipientsList');
+    const row = document.createElement('div');
+    row.className = 'recipient-row';
+    row.innerHTML = `
+      <input type="email" placeholder="email@example.com" value="${value}">
+      <button class="rm-btn" onclick="this.parentElement.remove()">×</button>`;
+    list.appendChild(row);
+  }
+
+  function addRecipient() { addRecipientRow(); }
+
+  // ── Save settings ──
+  async function saveSettings() {
+    const recipients = [...document.querySelectorAll('.recipient-row input')]
+      .map(i => i.value.trim()).filter(Boolean);
+
+    const payload = {
+      facility_ids: [...selectedFacilities],
+      preferred_hours: [...selectedHours].sort((a,b) => a-b),
+      check_interval_min: parseInt(document.getElementById('checkInterval').value) || 5,
+      days_ahead: parseInt(document.getElementById('daysAhead').value) || 7,
+      email_sender: document.getElementById('emailSender').value.trim(),
+      email_password: document.getElementById('emailPassword').value,
+      email_recipients: recipients,
+    };
+
+    const res = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) toast('Settings saved!', 'success');
+    else toast('Failed to save settings', 'error');
+  }
+
+  // ── Check now ──
+  async function checkNow() {
+    await fetch('/api/check-now', { method: 'POST' });
+    toast('Check triggered — results in a few seconds…');
+    setTimeout(loadSlots, 3000);
+  }
+
+  // ── Test email ──
+  async function testEmail() {
+    await saveSettings();
+    const res = await fetch('/api/test-email', { method: 'POST' });
+    if (res.ok) toast('Test email sent!', 'success');
+    else {
+      const err = await res.json();
+      toast('Email failed: ' + (err.detail || 'unknown error'), 'error');
+    }
+  }
+
+  // ── Load slots ──
+  async function loadSlots() {
+    try {
+      const res = await fetch('/api/slots');
+      const data = await res.json();
+      allSlots = data.slots || [];
+      if (data.checked_at) {
+        document.getElementById('meta').textContent =
+          'Last checked: ' + new Date(data.checked_at).toLocaleString('en-SG');
+      }
+    } catch {
+      allSlots = [];
+    }
+    updateStats();
+    buildDayFilter();
+    renderTable();
+  }
+
+  function updateStats() {
+    document.getElementById('sTotal').textContent = allSlots.length;
+    document.getElementById('sCCs').textContent   = new Set(allSlots.map(s => s.facility_name)).size;
+    document.getElementById('sDays').textContent  = new Set(allSlots.map(s => s.date)).size;
+    document.getElementById('sPeak').textContent  = allSlots.filter(s => s.is_peak).length;
+  }
+
+  function buildDayFilter() {
+    const sel = document.getElementById('filterDay');
+    const cur = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    [...new Set(allSlots.map(s => s.day))].forEach(d => {
+      const o = document.createElement('option');
+      o.value = o.textContent = d;
+      if (d === cur) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+
+  function renderTable() {
+    const q  = document.getElementById('search').value.toLowerCase();
+    const pr = document.getElementById('filterRate').value;
+    const pd = document.getElementById('filterDay').value;
+
+    const rows = allSlots.filter(s => {
+      if (q  && !s.facility_name.toLowerCase().includes(q) && !s.date.includes(q)) return false;
+      if (pr === 'peak'    && !s.is_peak) return false;
+      if (pr === 'offpeak' &&  s.is_peak) return false;
+      if (pd && s.day !== pd)             return false;
+      return true;
+    });
+
+    const tbody = document.getElementById('tbody');
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="6">
+        <div class="empty">
+          <span>🏸</span>
+          <h3>No slots found</h3>
+          <p>The monitor is running. You'll get an email the moment slots open.</p>
+        </div>
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = rows.map(s => `
+      <tr>
+        <td><strong>${s.facility_name}</strong></td>
+        <td>${s.day}<br><span style="color:#aaa;font-size:12px">${s.date}</span></td>
+        <td style="font-family:monospace">${s.start} – ${s.end}</td>
+        <td>Court ${s.court}</td>
+        <td><span class="badge ${s.is_peak ? 'badge-peak' : 'badge-offpeak'}">${s.is_peak ? 'PEAK' : 'OFF-PEAK'}</span></td>
+        <td><a class="book" href="${s.booking_url}" target="_blank">Book →</a></td>
+      </tr>`).join('');
+  }
+
+  // ── Init ──
+  loadConfig();
+  loadSlots();
+  setInterval(loadSlots, 30000);
+</script>
+</body>
+</html>
