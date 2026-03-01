@@ -1,4 +1,12 @@
-fastapi>=0.110.0
-uvicorn>=0.29.0
-requests>=2.31.0
-python-dotenv>=1.0.0
+
+flask
+gunicorn
+apscheduler
+requests
+selenium
+selenium-stealth
+webdriver-manager
+openai
+Pillow
+python-dotenv
+pytz
